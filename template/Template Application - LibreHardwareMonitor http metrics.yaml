@@ -1,0 +1,208 @@
+zabbix_export:
+  version: '6.0'
+  date: '2026-02-01T10:01:14Z'
+  groups:
+    - uuid: 338038e6e18f4e7b86d6b2c73b30cdae
+      name: 'Zabbix Templates'
+  templates:
+    - uuid: 6f231e2448e14d61852949c722941b70
+      template: 'Template Application - LibreHardwareMonitor http metrics'
+      name: 'Template Application - LibreHardwareMonitor http metrics'
+      groups:
+        - name: 'Zabbix Templates'
+      items:
+        - uuid: 92064e5a6b0046249370e8dd432cd67b
+          name: 'LibreHWMon: Get raw data'
+          type: HTTP_AGENT
+          key: lhwmon.getrawdata
+          history: '0'
+          trends: '0'
+          value_type: TEXT
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  // Parse input JSON
+                  var data = JSON.parse(value);
+                  
+                  // Binary multipliers (bytes)
+                  var BYTE_MULTIPLIERS = {
+                      "KiB": 1024,
+                      "MiB": 1024 ** 2,
+                      "GiB": 1024 ** 3,
+                      "TiB": 1024 ** 4,
+                  
+                      // LibreHWMonitor lies: MB/GB are actually binary
+                      "KB": 1024,
+                      "MB": 1024 ** 2,
+                      "GB": 1024 ** 3,
+                      "TB": 1024 ** 4
+                  };
+                  
+                  // SI multipliers (everything else)
+                  var SI_MULTIPLIERS = {
+                      "m": 1e-3,
+                      "k": 1e3,
+                      "K": 1e3,
+                      "M": 1e6,
+                      "G": 1e9,
+                      "T": 1e12
+                  };
+                  
+                  // Normalize numeric string + unit
+                  function normalize(val) {
+                      if (typeof val !== "string") return null;
+                  
+                      var m = val.trim().match(/^([0-9.]+)\s*([a-zA-Z°%/]+)$/);
+                      if (!m) return null;
+                  
+                      var num = parseFloat(m[1]);
+                      var unit = m[2];
+                  
+                      // ---------- BYTE UNITS ----------
+                      if (unit.indexOf("B") !== -1 && BYTE_MULTIPLIERS[unit]) {
+                          num *= BYTE_MULTIPLIERS[unit];
+                          unit = "B";
+                          return { value: String(num), unit: unit };
+                      }
+                  
+                      // ---------- SI UNITS ----------
+                      var si = unit.match(/^([mMkKgGtT]?)(.+)$/);
+                      if (si && SI_MULTIPLIERS[si[1]]) {
+                          num *= SI_MULTIPLIERS[si[1]];
+                          unit = si[2];
+                      }
+                  
+                      return {
+                          value: String(num),
+                          unit: unit
+                      };
+                  }
+                  
+                  // Recursive cleanup + normalization
+                  function process(obj) {
+                      if (Array.isArray(obj)) {
+                          for (var i = 0; i < obj.length; i++) {
+                              process(obj[i]);
+                          }
+                      } else if (obj && typeof obj === "object") {
+                  
+                          // Drop useless LibreHWMonitor fields
+                          delete obj.ImageURL;
+                          delete obj.RawMin;
+                          delete obj.RawMax;
+                          delete obj.RawValue;
+                  
+                          var r;
+                  
+                          if (obj.Value) {
+                              r = normalize(obj.Value);
+                              if (r) {
+                                  obj.Value = r.value;
+                                  obj.Unit = r.unit;
+                              }
+                          }
+                  
+                          if (obj.Min) {
+                              r = normalize(obj.Min);
+                              if (r) obj.Min = r.value;
+                          }
+                  
+                          if (obj.Max) {
+                              r = normalize(obj.Max);
+                              if (r) obj.Max = r.value;
+                          }
+                  
+                          // Recurse into children
+                          for (var key in obj) {
+                              if (obj.hasOwnProperty(key)) {
+                                  process(obj[key]);
+                              }
+                          }
+                      }
+                  }
+                  
+                  // Apply normalization
+                  process(data);
+                  
+                  // Output compact JSON
+                  return JSON.stringify(data);
+                  
+          timeout: 10s
+          url: '{$LHWM_URL}'
+          output_format: JSON
+          tags:
+            - tag: application
+              value: raw-data
+      discovery_rules:
+        - uuid: 0e4ebc33876a4cad93186e1c061bdbed
+          name: 'Discover sensors'
+          type: DEPENDENT
+          key: lhwmon.lld
+          delay: '0'
+          lifetime: 1d
+          item_prototypes:
+            - uuid: 81c466d15a14465ca8d99fea36070cbd
+              name: 'LHWM {#TYPE}: {#HARDWARE} {#SENSOR}'
+              type: DEPENDENT
+              key: 'lhwmon["{#SENSOR}-{#SENSORID}"]'
+              delay: '0'
+              value_type: FLOAT
+              units: '{#UNIT}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$..Children[?(@.SensorId=="{#SENSORID}")].Value.first()'
+                - type: STR_REPLACE
+                  parameters:
+                    - ' {#UNIT}'
+                    - ''
+              master_item:
+                key: lhwmon.getrawdata
+              tags:
+                - tag: librehwmon
+                  value: '{#TYPE}'
+          master_item:
+            key: lhwmon.getrawdata
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var input = JSON.parse(value);
+                  var root = input.body ? input.body : input;
+                  
+                  var lld = { data: [] };
+                  
+                  function walk(node, currentHardware) {
+                      // Update hardware context
+                      if (node.HardwareId && node.Text) {
+                          currentHardware = node.Text;
+                      }
+                  
+                      // Sensor node
+                      if (node.SensorId && node.Type && node.Text) {
+                          lld.data.push({
+                              "{#HARDWARE}": currentHardware || "Unknown",
+                              "{#SENSOR}": node.Text,
+                              "{#SENSORID}": node.SensorId,
+                              "{#TYPE}": node.Type,
+                              "{#UNIT}": node.Unit
+                          });
+                      }
+                  
+                      // Recurse
+                      if (node.Children && node.Children.length) {
+                          for (var i = 0; i < node.Children.length; i++) {
+                              walk(node.Children[i], currentHardware);
+                          }
+                      }
+                  }
+                  
+                  walk(root, null);
+                  
+                  return JSON.stringify(lld);
+                  
+      macros:
+        - macro: '{$LHWM_URL}'
+          value: 'http://localhost:8085/data.json'
+          description: 'LibreHWMonitor web port'
