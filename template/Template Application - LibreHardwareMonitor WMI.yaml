@@ -1,0 +1,413 @@
+zabbix_export:
+  version: '6.0'
+  date: '2026-02-06T13:57:52Z'
+  groups:
+    - uuid: 338038e6e18f4e7b86d6b2c73b30cdae
+      name: 'Zabbix Templates'
+  templates:
+    - uuid: 8260c52746a54f5a92e8759afa39f9c5
+      template: 'Template Application - LibreHardwareMonitor WMI'
+      name: 'Template Application - LibreHardwareMonitor WMI'
+      groups:
+        - name: 'Zabbix Templates'
+      items:
+        - uuid: 3c751c44ab1c492eb042ba68d653da85
+          name: 'Get LHWM values'
+          type: ZABBIX_ACTIVE
+          key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+          history: '0'
+          trends: '0'
+          value_type: TEXT
+          tags:
+            - tag: application
+              value: raw-data
+      discovery_rules:
+        - uuid: bb99856705a545d1a129b3150560b3f1
+          name: 'Discover LHWM Sensors - Clock'
+          type: DEPENDENT
+          key: lhwm.discovery.cloak
+          delay: '0'
+          filter:
+            conditions:
+              - macro: '{#SENSORTYPE}'
+                value: Clock
+                formulaid: A
+          item_prototypes:
+            - uuid: 10355391944f4b9eb56173f7796d9875
+              name: 'LHWM - {#NAME} {#SENSORTYPE}'
+              type: DEPENDENT
+              key: 'lhwm.clock["{#NAME}-{#IDENTIFIER}"]'
+              delay: '0'
+              value_type: FLOAT
+              units: Hz
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.[?(@.Identifier == "{#IDENTIFIER}")].Value.first()'
+                - type: MULTIPLIER
+                  parameters:
+                    - '1000000'
+              master_item:
+                key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+              tags:
+                - tag: LHWM
+                  value: Clock
+          master_item:
+            key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+          lld_macro_paths:
+            - lld_macro: '{#IDENTIFIER}'
+              path: $.Identifier
+            - lld_macro: '{#NAME}'
+              path: $.Name
+            - lld_macro: '{#PARENT}'
+              path: $.Parent
+            - lld_macro: '{#SENSORTYPE}'
+              path: $.SensorType
+        - uuid: ab96b273c9184f5fbd3df544ee825a00
+          name: 'Discover LHWM Sensors - Control'
+          type: DEPENDENT
+          key: lhwm.discovery.control
+          delay: '0'
+          filter:
+            conditions:
+              - macro: '{#SENSORTYPE}'
+                value: Control
+                formulaid: A
+          item_prototypes:
+            - uuid: 0c1ed53a269a4a81b78e16c87a096946
+              name: 'LHWM - {#NAME} on {#PARENT}'
+              type: DEPENDENT
+              key: 'lhwm.control["{#NAME}-{#IDENTIFIER}"]'
+              delay: '0'
+              value_type: FLOAT
+              units: '%'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.[?(@.Identifier == "{#IDENTIFIER}")].Value.first()'
+              master_item:
+                key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+              tags:
+                - tag: LHWM
+                  value: Control
+          master_item:
+            key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+          lld_macro_paths:
+            - lld_macro: '{#IDENTIFIER}'
+              path: $.Identifier
+            - lld_macro: '{#NAME}'
+              path: $.Name
+            - lld_macro: '{#PARENT}'
+              path: $.Parent
+            - lld_macro: '{#SENSORTYPE}'
+              path: $.SensorType
+        - uuid: da854f7194e545e7a020a5338069f09d
+          name: 'Discover LHWM Sensors - Data'
+          type: DEPENDENT
+          key: lhwm.discovery.data
+          delay: '0'
+          filter:
+            conditions:
+              - macro: '{#SENSORTYPE}'
+                value: Data
+                formulaid: A
+          item_prototypes:
+            - uuid: f2bd1a3fdf364d4b80bb249d6c00711b
+              name: 'LHWM - {#NAME} on {#PARENT}'
+              type: DEPENDENT
+              key: 'lhwm.data["{#NAME}-{#IDENTIFIER}"]'
+              delay: '0'
+              value_type: FLOAT
+              units: GB
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.[?(@.Identifier == "{#IDENTIFIER}")].Value.first()'
+              master_item:
+                key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+              tags:
+                - tag: LHWM
+                  value: Data
+          master_item:
+            key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+          lld_macro_paths:
+            - lld_macro: '{#IDENTIFIER}'
+              path: $.Identifier
+            - lld_macro: '{#NAME}'
+              path: $.Name
+            - lld_macro: '{#PARENT}'
+              path: $.Parent
+            - lld_macro: '{#SENSORTYPE}'
+              path: $.SensorType
+        - uuid: 3397b0a1e8914ff09750b2732ed797b3
+          name: 'Discover LHWM Sensors - Fan'
+          type: DEPENDENT
+          key: lhwm.discovery.fan
+          delay: '0'
+          filter:
+            conditions:
+              - macro: '{#SENSORTYPE}'
+                value: Fan
+                formulaid: A
+          item_prototypes:
+            - uuid: 7e86d27e1e2f4d9e9d23cdd6423c6099
+              name: 'LHWM - {#NAME} on {#PARENT}'
+              type: DEPENDENT
+              key: 'lhwm.fan["{#NAME}-{#IDENTIFIER}"]'
+              delay: '0'
+              value_type: FLOAT
+              units: RPM
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.[?(@.Identifier == "{#IDENTIFIER}")].Value.first()'
+              master_item:
+                key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+              tags:
+                - tag: LHWM
+                  value: Fan
+          master_item:
+            key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+          lld_macro_paths:
+            - lld_macro: '{#IDENTIFIER}'
+              path: $.Identifier
+            - lld_macro: '{#NAME}'
+              path: $.Name
+            - lld_macro: '{#PARENT}'
+              path: $.Parent
+            - lld_macro: '{#SENSORTYPE}'
+              path: $.SensorType
+        - uuid: 490e7682908e407fa643a7121751482b
+          name: 'Discover LHWM Sensors - Load'
+          type: DEPENDENT
+          key: lhwm.discovery.load
+          delay: '0'
+          filter:
+            conditions:
+              - macro: '{#SENSORTYPE}'
+                value: Load
+                formulaid: A
+          item_prototypes:
+            - uuid: 84c00ae934ba41b5868fa0d011f4b261
+              name: 'LHWM - {#NAME} load'
+              type: DEPENDENT
+              key: 'lhwm.load["{#NAME}-{#IDENTIFIER}"]'
+              delay: '0'
+              value_type: FLOAT
+              units: '%'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.[?(@.Identifier == "{#IDENTIFIER}")].Value.first()'
+              master_item:
+                key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+              tags:
+                - tag: LHWM
+                  value: Load
+          master_item:
+            key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+          lld_macro_paths:
+            - lld_macro: '{#IDENTIFIER}'
+              path: $.Identifier
+            - lld_macro: '{#NAME}'
+              path: $.Name
+            - lld_macro: '{#PARENT}'
+              path: $.Parent
+            - lld_macro: '{#SENSORTYPE}'
+              path: $.SensorType
+        - uuid: 9c138757c8104311b03b5b9c4566c0a6
+          name: 'Discover LHWM Sensors - Power'
+          type: DEPENDENT
+          key: lhwm.discovery.power
+          delay: '0'
+          filter:
+            conditions:
+              - macro: '{#SENSORTYPE}'
+                value: Power
+                formulaid: A
+          item_prototypes:
+            - uuid: 20fec1d8887e4eebae4dd96e7bdad752
+              name: 'LHWM - {#NAME} {#SENSORTYPE}'
+              type: DEPENDENT
+              key: 'lhwm.power["{#NAME}-{#IDENTIFIER}"]'
+              delay: '0'
+              value_type: FLOAT
+              units: W
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.[?(@.Identifier == "{#IDENTIFIER}")].Value.first()'
+              master_item:
+                key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+              tags:
+                - tag: LHWM
+                  value: Power
+          master_item:
+            key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+          lld_macro_paths:
+            - lld_macro: '{#IDENTIFIER}'
+              path: $.Identifier
+            - lld_macro: '{#NAME}'
+              path: $.Name
+            - lld_macro: '{#PARENT}'
+              path: $.Parent
+            - lld_macro: '{#SENSORTYPE}'
+              path: $.SensorType
+        - uuid: 3f19aba8ff1f4ddc9a659e851d3489aa
+          name: 'Discover LHWM Sensors - SmallData'
+          type: DEPENDENT
+          key: lhwm.discovery.smalldata
+          delay: '0'
+          filter:
+            conditions:
+              - macro: '{#SENSORTYPE}'
+                value: SmallData
+                formulaid: A
+          item_prototypes:
+            - uuid: 5c5ffa463dfd498096851ad67db8042a
+              name: 'LHWM - {#NAME} on {#PARENT}'
+              type: DEPENDENT
+              key: 'lhwm.smalldata["{#NAME}-{#IDENTIFIER}"]'
+              delay: '0'
+              value_type: FLOAT
+              units: B
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.[?(@.Identifier == "{#IDENTIFIER}")].Value.first()'
+                - type: MULTIPLIER
+                  parameters:
+                    - '1000000'
+              master_item:
+                key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+              tags:
+                - tag: LHWM
+                  value: Data
+          master_item:
+            key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+          lld_macro_paths:
+            - lld_macro: '{#IDENTIFIER}'
+              path: $.Identifier
+            - lld_macro: '{#NAME}'
+              path: $.Name
+            - lld_macro: '{#PARENT}'
+              path: $.Parent
+            - lld_macro: '{#SENSORTYPE}'
+              path: $.SensorType
+        - uuid: 986bc20f3a104060a635fb849726c0d8
+          name: 'Discover LHWM Sensors - Temperature'
+          type: DEPENDENT
+          key: lhwm.discovery.temp
+          delay: '0'
+          filter:
+            conditions:
+              - macro: '{#SENSORTYPE}'
+                value: Temperature
+                formulaid: A
+          item_prototypes:
+            - uuid: c0839cb430224dbbb5e61a8494ba6457
+              name: 'LHWM - {#NAME} {#SENSORTYPE}'
+              type: DEPENDENT
+              key: 'lhwm.temp["{#NAME}-{#IDENTIFIER}"]'
+              delay: '0'
+              value_type: FLOAT
+              units: C
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.[?(@.Identifier == "{#IDENTIFIER}")].Value.first()'
+              master_item:
+                key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+              tags:
+                - tag: LHWM
+                  value: Temperature
+          master_item:
+            key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+          lld_macro_paths:
+            - lld_macro: '{#IDENTIFIER}'
+              path: $.Identifier
+            - lld_macro: '{#NAME}'
+              path: $.Name
+            - lld_macro: '{#PARENT}'
+              path: $.Parent
+            - lld_macro: '{#SENSORTYPE}'
+              path: $.SensorType
+        - uuid: f59c4267bf214c9581ad9fb6e8c40fe2
+          name: 'Discover LHWM Sensors - Throughput'
+          type: DEPENDENT
+          key: lhwm.discovery.throughput
+          delay: '0'
+          filter:
+            conditions:
+              - macro: '{#SENSORTYPE}'
+                value: Throughput
+                formulaid: A
+          item_prototypes:
+            - uuid: 68b0d3fbe7434974a60ae1d0bbbc494e
+              name: 'LHWM - {#NAME} {#SENSORTYPE}'
+              type: DEPENDENT
+              key: 'lhwm.throughput["{#NAME}-{#IDENTIFIER}"]'
+              delay: '0'
+              value_type: FLOAT
+              units: Bps
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.[?(@.Identifier == "{#IDENTIFIER}")].Value.first()'
+                - type: MULTIPLIER
+                  parameters:
+                    - '1000000'
+              master_item:
+                key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+              tags:
+                - tag: LHWM
+                  value: Throughput
+          master_item:
+            key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+          lld_macro_paths:
+            - lld_macro: '{#IDENTIFIER}'
+              path: $.Identifier
+            - lld_macro: '{#NAME}'
+              path: $.Name
+            - lld_macro: '{#PARENT}'
+              path: $.Parent
+            - lld_macro: '{#SENSORTYPE}'
+              path: $.SensorType
+        - uuid: e150e37a701d4bfba07826ddee28381d
+          name: 'Discover LHWM Sensors - Voltage'
+          type: DEPENDENT
+          key: lhwm.discovery.volt
+          delay: '0'
+          filter:
+            conditions:
+              - macro: '{#SENSORTYPE}'
+                value: Voltage
+                formulaid: A
+          item_prototypes:
+            - uuid: ff9739fc2c3041b3991ee3ec0de23a31
+              name: 'LHWM - {#NAME} {#SENSORTYPE}'
+              type: DEPENDENT
+              key: 'lhwm.volt["{#NAME}-{#IDENTIFIER}"]'
+              delay: '0'
+              value_type: FLOAT
+              units: V
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.[?(@.Identifier == "{#IDENTIFIER}")].Value.first()'
+              master_item:
+                key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+              tags:
+                - tag: LHWM
+                  value: Voltage
+          master_item:
+            key: 'wmi.getall[Root\LibreHardwareMonitor,SELECT * FROM Sensor]'
+          lld_macro_paths:
+            - lld_macro: '{#IDENTIFIER}'
+              path: $.Identifier
+            - lld_macro: '{#NAME}'
+              path: $.Name
+            - lld_macro: '{#PARENT}'
+              path: $.Parent
+            - lld_macro: '{#SENSORTYPE}'
+              path: $.SensorType
